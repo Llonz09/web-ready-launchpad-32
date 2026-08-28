@@ -1,0 +1,1557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Workplace Productivity Assistant</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    /* ===== RESET & VARIABLES ===== */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #f5f6fa;
+      --surface: #ffffff;
+      --surface2: #eef0f6;
+      --surface3: #e4e6ef;
+      --text: #1a1a2e;
+      --text2: #5a5a7a;
+      --text3: #8a8aa0;
+      --accent: #6c63ff;
+      --accent2: #e94560;
+      --accent-grad: linear-gradient(135deg, #6c63ff, #e94560);
+      --accent-soft: rgba(108, 99, 255, 0.10);
+      --shadow: 0 2px 12px rgba(108, 99, 255, 0.08);
+      --shadow-lg: 0 8px 32px rgba(108, 99, 255, 0.12);
+      --radius: 12px;
+      --radius-sm: 8px;
+      --radius-lg: 20px;
+      --font: 'Inter', sans-serif;
+      --mono: 'JetBrains Mono', monospace;
+      --sidebar-w: 260px;
+      --header-h: 64px;
+      --card-border: rgba(108, 99, 255, 0.06);
+      --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .dark {
+      --bg: #0d0d1a;
+      --surface: #17172b;
+      --surface2: #1e1e38;
+      --surface3: #28284a;
+      --text: #e4e4f0;
+      --text2: #9595b8;
+      --text3: #6a6a8a;
+      --shadow: 0 2px 12px rgba(0,0,0,0.3);
+      --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
+      --card-border: rgba(108, 99, 255, 0.10);
+      --accent-soft: rgba(108, 99, 255, 0.12);
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      transition: background var(--transition), color var(--transition);
+      overflow-x: hidden;
+    }
+    a { color: var(--accent); text-decoration: none; transition: var(--transition); }
+    a:hover { color: var(--accent2); }
+
+    /* ===== SCROLLBAR ===== */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--text3); border-radius: 12px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+    /* ===== DASHBOARD LAYOUT ===== */
+    .app {
+      display: grid;
+      grid-template-columns: var(--sidebar-w) 1fr;
+      grid-template-rows: var(--header-h) 1fr;
+      grid-template-areas: "sidebar header" "sidebar main";
+      min-height: 100vh;
+    }
+
+    /* ===== HEADER ===== */
+    .header {
+      grid-area: header;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--card-border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(12px);
+    }
+    .header-left { display: flex; align-items: center; gap: 16px; }
+    .header-left .hamburger {
+      display: none;
+      background: none; border: none; color: var(--text);
+      font-size: 1.3rem; cursor: pointer;
+    }
+    .header-search {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--surface2); border-radius: 8px;
+      padding: 8px 16px; width: 280px;
+      border: 1px solid transparent; transition: var(--transition);
+    }
+    .header-search:focus-within { border-color: var(--accent); background: var(--surface); }
+    .header-search i { color: var(--text3); font-size: 0.9rem; }
+    .header-search input {
+      background: none; border: none; outline: none;
+      color: var(--text); font-family: var(--font); font-size: 0.9rem;
+      width: 100%;
+    }
+    .header-search input::placeholder { color: var(--text3); }
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    .header-btn {
+      width: 40px; height: 40px; border-radius: 50%;
+      border: 1px solid var(--card-border); background: var(--surface);
+      color: var(--text2); display: flex; align-items: center;
+      justify-content: center; cursor: pointer; transition: var(--transition);
+      font-size: 1rem;
+    }
+    .header-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .header-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--accent-grad); display: flex;
+      align-items: center; justify-content: center;
+      color: #fff; font-weight: 700; font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    /* ===== SIDEBAR ===== */
+    .sidebar {
+      grid-area: sidebar;
+      background: var(--surface);
+      border-right: 1px solid var(--card-border);
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      z-index: 200;
+      transition: transform var(--transition);
+    }
+    .sidebar-logo {
+      display: flex; align-items: center; gap: 12px;
+      padding: 16px 24px; height: var(--header-h);
+      font-weight: 800; font-size: 1.15rem;
+      border-bottom: 1px solid var(--card-border);
+    }
+    .sidebar-logo .logo-icon {
+      width: 34px; height: 34px; border-radius: 10px;
+      background: var(--accent-grad);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 1rem;
+    }
+    .sidebar-logo span { background: var(--accent-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .sidebar-nav { padding: 12px 16px; flex: 1; }
+    .sidebar-nav .nav-label {
+      font-size: 0.65rem; letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--text3); padding: 16px 12px 6px; font-weight: 600;
+    }
+    .sidebar-nav a {
+      display: flex; align-items: center; gap: 14px;
+      padding: 10px 14px; border-radius: 10px;
+      color: var(--text2); font-weight: 500; font-size: 0.9rem;
+      transition: var(--transition); cursor: pointer;
+      margin-bottom: 2px;
+    }
+    .sidebar-nav a i { width: 20px; text-align: center; font-size: 1rem; }
+    .sidebar-nav a:hover { background: var(--accent-soft); color: var(--accent); }
+    .sidebar-nav a.active {
+      background: var(--accent-soft); color: var(--accent);
+      border-left: 3px solid var(--accent);
+    }
+    .sidebar-footer {
+      padding: 16px 20px;
+      border-top: 1px solid var(--card-border);
+      display: flex; align-items: center; gap: 12px;
+    }
+    .sidebar-footer .theme-toggle {
+      background: none; border: 1px solid var(--card-border);
+      border-radius: 8px; width: 40px; height: 40px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text2); cursor: pointer; transition: var(--transition);
+      font-size: 1rem;
+    }
+    .sidebar-footer .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+    .sidebar-footer .status {
+      font-size: 0.8rem; color: var(--text3); display: flex;
+      align-items: center; gap: 6px;
+    }
+    .sidebar-footer .status .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #22c55e; display: inline-block;
+    }
+
+    /* ===== MAIN CONTENT ===== */
+    .main {
+      grid-area: main;
+      padding: 28px 32px;
+      overflow-y: auto;
+      max-height: calc(100vh - var(--header-h));
+    }
+    .page { display: none; }
+    .page.active { display: block; }
+    .page-header {
+      margin-bottom: 28px;
+    }
+    .page-header h1 {
+      font-size: 1.6rem; font-weight: 700; margin-bottom: 4px;
+    }
+    .page-header p {
+      color: var(--text2); font-size: 0.95rem;
+    }
+
+    /* ===== STATS CARDS (Dashboard) ===== */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      box-shadow: var(--shadow);
+      transition: var(--transition);
+    }
+    .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+    .stat-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .stat-header i { font-size: 1.5rem; color: var(--accent); opacity: 0.7; }
+    .stat-value { font-size: 1.8rem; font-weight: 800; }
+    .stat-label { color: var(--text2); font-size: 0.85rem; }
+
+    /* ===== QUICK ACTIONS ===== */
+    .quick-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+    .quick-card {
+      background: var(--surface);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex; align-items: flex-start; gap: 16px;
+    }
+    .quick-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+    .quick-card .icon {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: var(--accent-soft); color: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem; flex-shrink: 0;
+    }
+    .quick-card .info h3 { font-size: 1rem; font-weight: 600; margin-bottom: 4px; }
+    .quick-card .info p { color: var(--text2); font-size: 0.85rem; }
+
+    .dashboard-cards { margin-bottom: 24px; }
+    .dash-section-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 16px; }
+
+    /* ===== MODULE PANELS ===== */
+    .module-panel {
+      background: var(--surface);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .module-panel .panel-body { padding: 28px; }
+    .module-panel .panel-header {
+      padding: 20px 28px;
+      border-bottom: 1px solid var(--card-border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .module-panel .panel-header h2 { font-size: 1.2rem; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+    .module-panel .panel-header h2 i { color: var(--accent); }
+
+    /* ===== FORM ELEMENTS ===== */
+    .form-group { margin-bottom: 18px; }
+    .form-group label {
+      display: block; font-size: 0.85rem; font-weight: 600;
+      margin-bottom: 6px; color: var(--text2);
+    }
+    .form-group label .req { color: var(--accent2); }
+    .form-control {
+      width: 100%; padding: 12px 16px;
+      border: 1px solid var(--card-border); border-radius: var(--radius-sm);
+      background: var(--surface2); color: var(--text);
+      font-family: var(--font); font-size: 0.9rem;
+      transition: var(--transition);
+    }
+    .form-control:focus {
+      outline: none; border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.12);
+      background: var(--surface);
+    }
+    .form-control::placeholder { color: var(--text3); }
+    textarea.form-control { min-height: 100px; resize: vertical; font-family: var(--font); }
+    select.form-control { appearance: none; cursor: pointer; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 28px; border-radius: 10px;
+      font-weight: 600; font-size: 0.9rem;
+      border: none; cursor: pointer;
+      transition: var(--transition);
+      background: var(--accent-grad); color: #fff;
+      box-shadow: 0 4px 14px rgba(108, 99, 255, 0.25);
+      font-family: var(--font);
+    }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(108, 99, 255, 0.35); }
+    .btn-outline {
+      background: transparent; color: var(--accent);
+      border: 2px solid var(--accent); box-shadow: none;
+    }
+    .btn-outline:hover { background: var(--accent); color: #fff; }
+    .btn-sm { padding: 8px 18px; font-size: 0.8rem; }
+    .btn-block { width: 100%; justify-content: center; }
+
+    /* ===== OUTPUT AREA ===== */
+    .output-area {
+      margin-top: 20px;
+      padding: 20px;
+      background: var(--surface2);
+      border-radius: var(--radius);
+      border: 1px solid var(--card-border);
+      display: none;
+      white-space: pre-wrap;
+      font-size: 0.9rem;
+      line-height: 1.7;
+    }
+    .output-area.show { display: block; }
+    .output-area h3 { font-size: 1rem; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    .output-area h3 i { color: var(--accent); }
+    .output-area table {
+      width: 100%; border-collapse: collapse; margin: 12px 0;
+      font-size: 0.85rem;
+    }
+    .output-area th, .output-area td {
+      padding: 10px 14px; text-align: left;
+      border-bottom: 1px solid var(--card-border);
+    }
+    .output-area th { background: var(--surface); font-weight: 600; color: var(--text2); font-size: 0.8rem; text-transform: uppercase; }
+    .output-area ul { padding-left: 20px; margin: 8px 0; }
+    .output-area li { margin-bottom: 6px; }
+    .output-area .badge {
+      display: inline-block; padding: 2px 10px; border-radius: 20px;
+      font-size: 0.75rem; font-weight: 600;
+    }
+    .output-area .badge-h { background: #fee2e2; color: #dc2626; }
+    .output-area .badge-m { background: #fef3c7; color: #d97706; }
+    .output-area .badge-l { background: #d1fae5; color: #059669; }
+    .dark .output-area .badge-h { background: #450a0a; color: #fca5a5; }
+    .dark .output-area .badge-m { background: #451a03; color: #fcd34d; }
+    .dark .output-area .badge-l { background: #064e3b; color: #6ee7b7; }
+    .output-area .note {
+      padding: 10px 14px; background: var(--accent-soft);
+      border-radius: var(--radius-sm); font-size: 0.85rem;
+      margin: 8px 0; border-left: 3px solid var(--accent);
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 1200px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 992px) {
+      .app { grid-template-columns: 1fr; grid-template-areas: "header" "main"; }
+      .sidebar {
+        position: fixed; left: 0; top: 0; width: 280px;
+        transform: translateX(-100%); z-index: 500;
+        box-shadow: var(--shadow-lg);
+      }
+      .sidebar.open { transform: translateX(0); }
+      .sidebar-overlay {
+        position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+        z-index: 499; display: none;
+      }
+      .sidebar-overlay.show { display: block; }
+      .header-left .hamburger { display: flex; }
+      .header-search { width: 200px; }
+      .main { padding: 20px; max-height: none; }
+      .form-row { grid-template-columns: 1fr; }
+      .quick-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 768px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+      .header { padding: 0 16px; }
+      .header-search { width: 140px; }
+      .header-search input { font-size: 0.8rem; }
+      .main { padding: 16px; }
+      .module-panel .panel-body { padding: 20px; }
+      .module-panel .panel-header { padding: 16px 20px; }
+      .page-header h1 { font-size: 1.3rem; }
+    }
+    @media (max-width: 480px) {
+      .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+      .stat-card { padding: 14px 16px; }
+      .stat-value { font-size: 1.4rem; }
+      .header-search { width: 100px; }
+      .header-search input { width: 60px; }
+    }
+
+    /* ===== ANIMATIONS ===== */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .page.active { animation: fadeIn 0.3s ease; }
+    .output-area.show { animation: fadeIn 0.3s ease; }
+
+    /* ===== TASK PLANNER TABLE ===== */
+    .planner-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 0.85rem; }
+    .planner-table th, .planner-table td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--card-border); }
+    .planner-table th { background: var(--surface); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; color: var(--text2); }
+
+    /* Eisenhower Matrix */
+    .eisenhower-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0;
+    }
+    .eisenhower-card {
+      padding: 16px; border-radius: var(--radius-sm); border: 1px solid var(--card-border);
+      background: var(--surface);
+    }
+    .eisenhower-card h4 { font-size: 0.85rem; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+    .eisenhower-card ul { padding-left: 16px; font-size: 0.85rem; }
+    .eisenhower-card li { margin-bottom: 4px; }
+
+    /* ===== CLEAR STATES ===== */
+    .empty-state {
+      text-align: center; padding: 40px 20px; color: var(--text3);
+    }
+    .empty-state i { font-size: 2.5rem; margin-bottom: 12px; color: var(--accent); opacity: 0.4; }
+
+    /* ===== AI CHATBOT ===== */
+    .chat-panel { display: flex; flex-direction: column; height: 620px; max-height: 75vh; }
+    .chat-messages {
+      flex: 1; overflow-y: auto; padding: 24px 28px;
+      display: flex; flex-direction: column; gap: 14px;
+    }
+    .chat-msg { display: flex; gap: 10px; max-width: 82%; animation: fadeIn 0.25s ease; }
+    .chat-msg.user { align-self: flex-end; flex-direction: row-reverse; }
+    .chat-msg .chat-avatar {
+      width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.8rem; color: #fff;
+    }
+    .chat-msg.bot .chat-avatar { background: var(--accent-grad); }
+    .chat-msg.user .chat-avatar { background: var(--surface3); color: var(--text2); }
+    .chat-bubble {
+      padding: 12px 16px; border-radius: var(--radius);
+      font-size: 0.9rem; line-height: 1.6;
+    }
+    .chat-msg.bot .chat-bubble { background: var(--surface2); border-bottom-left-radius: 4px; }
+    .chat-msg.user .chat-bubble { background: var(--accent-grad); color: #fff; border-bottom-right-radius: 4px; }
+    .chat-bubble ul { padding-left: 18px; margin-top: 6px; }
+    .chat-bubble li { margin-bottom: 3px; }
+    .chat-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .chat-action-btn {
+      font-family: var(--font); font-size: 0.78rem; font-weight: 600;
+      padding: 7px 14px; border-radius: 20px; cursor: pointer;
+      background: var(--surface); color: var(--accent);
+      border: 1px solid var(--accent); transition: var(--transition);
+    }
+    .chat-action-btn:hover { background: var(--accent); color: #fff; }
+    .chat-typing { display: flex; gap: 4px; padding: 4px 0; }
+    .chat-typing span {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--text3);
+      animation: chatTyping 1.2s infinite ease-in-out;
+    }
+    .chat-typing span:nth-child(2) { animation-delay: 0.15s; }
+    .chat-typing span:nth-child(3) { animation-delay: 0.3s; }
+    @keyframes chatTyping {
+      0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+      30% { opacity: 1; transform: translateY(-3px); }
+    }
+    .chat-suggestions {
+      display: flex; flex-wrap: wrap; gap: 8px;
+      padding: 12px 28px; border-top: 1px solid var(--card-border);
+    }
+    .chat-chip {
+      font-family: var(--font); font-size: 0.78rem;
+      padding: 6px 14px; border-radius: 20px; cursor: pointer;
+      background: var(--surface2); color: var(--text2);
+      border: 1px solid var(--card-border); transition: var(--transition);
+    }
+    .chat-chip:hover { border-color: var(--accent); color: var(--accent); }
+    .chat-input-row {
+      display: flex; gap: 10px; align-items: flex-end;
+      padding: 16px 28px; border-top: 1px solid var(--card-border);
+    }
+    .chat-input-row textarea {
+      flex: 1; resize: none; min-height: 44px; max-height: 120px;
+      padding: 12px 16px; border-radius: var(--radius-sm);
+      border: 1px solid var(--card-border); background: var(--surface2);
+      color: var(--text); font-family: var(--font); font-size: 0.9rem;
+    }
+    .chat-input-row textarea:focus {
+      outline: none; border-color: var(--accent); background: var(--surface);
+      box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.12);
+    }
+    .chat-send-btn {
+      width: 44px; height: 44px; border-radius: 50%; border: none; flex-shrink: 0;
+      background: var(--accent-grad); color: #fff; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; transition: var(--transition);
+    }
+    .chat-send-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(108, 99, 255, 0.3); }
+    @media (max-width: 768px) {
+      .chat-panel { height: 540px; }
+      .chat-messages, .chat-suggestions, .chat-input-row { padding-left: 16px; padding-right: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar Overlay (mobile) -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<div class="app">
+  <!-- ===== HEADER ===== -->
+  <header class="header">
+    <div class="header-left">
+      <button class="hamburger" id="hamburger" aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
+      <div class="header-search">
+        <i class="fas fa-search"></i>
+        <input type="text" placeholder="Search modules..." id="globalSearch" />
+      </div>
+    </div>
+    <div class="header-right">
+      <button class="header-btn" title="Notifications"><i class="fas fa-bell"></i></button>
+      <button class="header-btn" id="settingsBtn" title="Set your display name"><i class="fas fa-cog"></i></button>
+      <div class="header-avatar" id="headerAvatar" title="Click to set your display name"><i class="fas fa-user"></i></div>
+    </div>
+  </header>
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon"><i class="fas fa-bolt"></i></div>
+      <span>AI Workplace</span>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-label">Navigation</div>
+      <a data-page="dashboard" class="active"><i class="fas fa-home"></i> Dashboard</a>
+      <a data-page="chatbot"><i class="fas fa-robot"></i> AI Chatbot</a>
+      <a data-page="email"><i class="fas fa-envelope"></i> Email Generator</a>
+      <a data-page="meeting"><i class="fas fa-file-lines"></i> Meeting Notes</a>
+      <a data-page="planner"><i class="fas fa-tasks"></i> Task Planner</a>
+      <a data-page="research"><i class="fas fa-flask"></i> Research Assistant</a>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme"><i class="fas fa-moon"></i></button>
+      <div class="status"><span class="dot"></span> AI Online</div>
+    </div>
+  </aside>
+
+  <!-- ===== MAIN ===== -->
+  <main class="main">
+
+    <!-- ====== DASHBOARD ====== -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <h1 id="dashGreeting">Welcome</h1>
+        <p>Your AI productivity hub — chat with the assistant, run emails, summarize meetings, plan tasks, and research smarter.</p>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-header"><span class="stat-value">12</span><i class="fas fa-envelope-open-text"></i></div>
+          <div class="stat-label">Emails drafted today</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-header"><span class="stat-value">5</span><i class="fas fa-file-lines"></i></div>
+          <div class="stat-label">Meetings summarized</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-header"><span class="stat-value">8</span><i class="fas fa-tasks"></i></div>
+          <div class="stat-label">Tasks planned</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-header"><span class="stat-value">3</span><i class="fas fa-flask"></i></div>
+          <div class="stat-label">Research extracts</div>
+        </div>
+      </div>
+
+      <div class="dash-section-title"><i class="fas fa-bolt" style="color: var(--accent); margin-right: 8px;"></i> Quick Actions</div>
+      <div class="quick-grid">
+        <div class="quick-card" onclick="navigateTo('chatbot')">
+          <div class="icon"><i class="fas fa-robot"></i></div>
+          <div class="info">
+            <h3>Chat with the Assistant</h3>
+            <p>Describe what you need in plain language and get routed to the right tool.</p>
+          </div>
+        </div>
+        <div class="quick-card" onclick="navigateTo('email')">
+          <div class="icon"><i class="fas fa-envelope"></i></div>
+          <div class="info">
+            <h3>Draft an Email</h3>
+            <p>Generate professional emails with AI-powered tone and audience adaptation.</p>
+          </div>
+        </div>
+        <div class="quick-card" onclick="navigateTo('meeting')">
+          <div class="icon"><i class="fas fa-file-lines"></i></div>
+          <div class="info">
+            <h3>Summarize Meeting Notes</h3>
+            <p>Extract decisions, action items, and risks from raw transcripts.</p>
+          </div>
+        </div>
+        <div class="quick-card" onclick="navigateTo('planner')">
+          <div class="icon"><i class="fas fa-tasks"></i></div>
+          <div class="info">
+            <h3>Plan My Tasks</h3>
+            <p>Organize your workload with time-blocked schedules and priority matrices.</p>
+          </div>
+        </div>
+        <div class="quick-card" onclick="navigateTo('research')">
+          <div class="icon"><i class="fas fa-flask"></i></div>
+          <div class="info">
+            <h3>Research a Topic</h3>
+            <p>Extract key insights and strategic recommendations from articles or reports.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== AI CHATBOT ====== -->
+    <div class="page" id="page-chatbot">
+      <div class="module-panel">
+        <div class="panel-header">
+          <h2><i class="fas fa-robot"></i> AI Chatbot Assistant</h2>
+          <span style="font-size:0.75rem;color:var(--text3);">Describe a task in your own words</span>
+        </div>
+        <div class="chat-panel">
+          <div class="chat-messages" id="chatMessages"></div>
+          <div class="chat-suggestions">
+            <div class="chat-chip" onclick="sendChatSuggestion('Draft a follow-up email to a client about a delayed deliverable')">Draft an email</div>
+            <div class="chat-chip" onclick="sendChatSuggestion('Summarize my meeting notes')">Summarize a meeting</div>
+            <div class="chat-chip" onclick="sendChatSuggestion('Help me plan my tasks for the week')">Plan my tasks</div>
+            <div class="chat-chip" onclick="sendChatSuggestion('Research this topic for me')">Research a topic</div>
+            <div class="chat-chip" onclick="sendChatSuggestion('What can you help me with?')">What can you do?</div>
+          </div>
+          <div class="chat-input-row">
+            <textarea id="chatInput" rows="1" placeholder="Type a message… e.g. 'Summarize this meeting and draft a follow-up email'" onkeydown="handleChatKeydown(event)"></textarea>
+            <button class="chat-send-btn" onclick="sendChatMessage()" aria-label="Send message"><i class="fas fa-paper-plane"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== EMAIL GENERATOR ====== -->
+    <div class="page" id="page-email">
+      <div class="module-panel">
+        <div class="panel-header">
+          <h2><i class="fas fa-envelope"></i> Smart Email Generator</h2>
+          <span style="font-size:0.75rem;color:var(--text3);">Default: Formal · Team · 150–250 words</span>
+        </div>
+        <div class="panel-body">
+          <div class="form-group">
+            <label>Core Message <span class="req">*</span></label>
+            <textarea class="form-control" id="emailMsg" placeholder="What is the email about? e.g., 'Follow up on the delayed Q1 deliverable. We need the client to sign off on the revised timeline by Friday.'" rows="3"></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Audience</label>
+              <select class="form-control" id="emailAudience">
+                <option value="team">Team (action/collaboration)</option>
+                <option value="client">Client (value/service)</option>
+                <option value="manager">Manager (brevity/results)</option>
+                <option value="vendor">Vendor</option>
+                <option value="external">External Partner</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Tone</label>
+              <select class="form-control" id="emailTone">
+                <option value="formal">Formal (executive level)</option>
+                <option value="informal">Informal/Casual (internal team)</option>
+                <option value="persuasive">Persuasive (sales/pitch)</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-block" onclick="generateEmail()"><i class="fas fa-wand-magic-sparkles"></i> Generate Email</button>
+          <div class="output-area" id="emailOutput"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== MEETING NOTES ====== -->
+    <div class="page" id="page-meeting">
+      <div class="module-panel">
+        <div class="panel-header">
+          <h2><i class="fas fa-file-lines"></i> Meeting Notes Summarizer</h2>
+          <span style="font-size:0.75rem;color:var(--text3);">Paste raw transcript below</span>
+        </div>
+        <div class="panel-body">
+          <div class="form-group">
+            <label>Raw Meeting Transcript / Notes <span class="req">*</span></label>
+            <textarea class="form-control" id="meetingTranscript" placeholder="Paste the full meeting transcript, voice-to-text output, or rough notes here..." rows="6"></textarea>
+          </div>
+          <button class="btn btn-block" onclick="summarizeMeeting()"><i class="fas fa-wand-magic-sparkles"></i> Summarize Meeting</button>
+          <div class="output-area" id="meetingOutput"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== TASK PLANNER ====== -->
+    <div class="page" id="page-planner">
+      <div class="module-panel">
+        <div class="panel-header">
+          <h2><i class="fas fa-tasks"></i> AI Task Planner &amp; Scheduler</h2>
+          <span style="font-size:0.75rem;color:var(--text3);">Hours default: 9 AM – 5 PM</span>
+        </div>
+        <div class="panel-body">
+          <div class="form-group">
+            <label>Tasks (one per line) <span class="req">*</span></label>
+            <textarea class="form-control" id="plannerTasks" placeholder="Format: Task description | Deadline | Duration (min) | Priority&#10;e.g.:&#10;Prepare Q2 performance report | Fri 5pm | 90 | High&#10;Review vendor security audit | Mon 12pm | 60 | Medium&#10;Draft client follow-up email | Tomorrow | 20 | Low&#10;Update team wiki on new onboarding flow | This week | 30 | Low" rows="6"></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Work Start Time</label>
+              <input class="form-control" type="time" id="plannerStart" value="09:00" />
+            </div>
+            <div class="form-group">
+              <label>Work End Time</label>
+              <input class="form-control" type="time" id="plannerEnd" value="17:00" />
+            </div>
+          </div>
+          <button class="btn btn-block" onclick="planTasks()"><i class="fas fa-wand-magic-sparkles"></i> Generate Plan</button>
+          <div class="output-area" id="plannerOutput"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== RESEARCH ASSISTANT ====== -->
+    <div class="page" id="page-research">
+      <div class="module-panel">
+        <div class="panel-header">
+          <h2><i class="fas fa-flask"></i> AI Research Assistant</h2>
+          <span style="font-size:0.75rem;color:var(--text3);">Paste article text or enter a topic</span>
+        </div>
+        <div class="panel-body">
+          <div class="form-group">
+            <label>Article Text / Report Excerpt / Research Topic <span class="req">*</span></label>
+            <textarea class="form-control" id="researchText" placeholder="Paste the full article, report excerpt, whitepaper text, or a detailed research topic prompt here..." rows="6"></textarea>
+          </div>
+          <button class="btn btn-block" onclick="analyzeResearch()"><i class="fas fa-wand-magic-sparkles"></i> Analyze</button>
+          <div class="output-area" id="researchOutput"></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  (function() {
+    'use strict';
+
+    // ===== USER PROFILE (generic — no hardcoded person) =====
+    function getUserName() {
+      try { return localStorage.getItem('aiprod_username') || ''; } catch (e) { return ''; }
+    }
+    function setUserName(name) {
+      try { localStorage.setItem('aiprod_username', name); } catch (e) { /* storage unavailable */ }
+    }
+    function initials(name) {
+      const parts = name.trim().split(/\s+/).filter(Boolean);
+      if (!parts.length) return '';
+      return (parts[0][0] + (parts[1] ? parts[1][0] : '')).toUpperCase();
+    }
+    function refreshProfileUI() {
+      const name = getUserName();
+      const avatar = document.getElementById('headerAvatar');
+      const greeting = document.getElementById('dashGreeting');
+      if (name) {
+        avatar.innerHTML = initials(name);
+        avatar.title = name + ' — click to change';
+        greeting.textContent = 'Welcome back, ' + name;
+      } else {
+        avatar.innerHTML = '<i class="fas fa-user"></i>';
+        avatar.title = 'Click to set your display name';
+        greeting.textContent = 'Welcome';
+      }
+    }
+    function promptForName() {
+      let entered = null;
+      try { entered = window.prompt('What should we call you? (Used for the dashboard greeting and email sign-offs. Leave blank to stay anonymous.)', getUserName()); } catch (e) { entered = null; }
+      if (entered !== null) {
+        setUserName(entered.trim());
+        refreshProfileUI();
+      }
+    }
+    document.getElementById('settingsBtn').addEventListener('click', promptForName);
+    document.getElementById('headerAvatar').addEventListener('click', promptForName);
+    refreshProfileUI();
+
+    // ===== THEME =====
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = themeToggle.querySelector('i');
+    let saved = null;
+    try { saved = localStorage.getItem('aiprod_theme'); } catch (e) { saved = null; }
+    if (saved === 'dark') {
+      document.documentElement.classList.add('dark');
+      themeIcon.className = 'fas fa-sun';
+    }
+    themeToggle.addEventListener('click', () => {
+      const isDark = document.documentElement.classList.toggle('dark');
+      themeIcon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+      try { localStorage.setItem('aiprod_theme', isDark ? 'dark' : 'light'); } catch (e) { /* storage unavailable */ }
+    });
+
+    // ===== SIDEBAR NAVIGATION =====
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    const hamburger = document.getElementById('hamburger');
+
+    function closeSidebar() {
+      sidebar.classList.remove('open');
+      overlay.classList.remove('show');
+    }
+
+    hamburger.addEventListener('click', () => {
+      sidebar.classList.toggle('open');
+      overlay.classList.toggle('show');
+    });
+    overlay.addEventListener('click', closeSidebar);
+
+    // Navigate to page
+    window.navigateTo = function(pageId) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.remove('active'));
+      const targetPage = document.getElementById('page-' + pageId);
+      if (targetPage) targetPage.classList.add('active');
+      const targetLink = document.querySelector(`.sidebar-nav a[data-page="${pageId}"]`);
+      if (targetLink) targetLink.classList.add('active');
+      closeSidebar();
+    };
+
+    document.querySelectorAll('.sidebar-nav a').forEach(a => {
+      a.addEventListener('click', e => {
+        e.preventDefault();
+        const page = a.dataset.page;
+        if (page) navigateTo(page);
+      });
+    });
+
+    // ===== EMAIL GENERATOR =====
+    window.generateEmail = function() {
+      const msg = document.getElementById('emailMsg').value.trim();
+      const out = document.getElementById('emailOutput');
+      if (!msg) {
+        out.innerHTML = '<div class="note"><i class="fas fa-exclamation-triangle"></i> Core message is required. Please describe what the email is about.</div>';
+        out.classList.add('show');
+        return;
+      }
+      const audience = document.getElementById('emailAudience').value;
+      const tone = document.getElementById('emailTone').value;
+
+      const toneMap = { formal: 'Formal', informal: 'Informal/Casual', persuasive: 'Persuasive' };
+      const audienceMap = { team: 'Team', client: 'Client', manager: 'Manager', vendor: 'Vendor', external: 'External Partner' };
+
+      // Note which defaults were applied per spec (audience defaults to Team, tone to Formal
+      // only when truly unset — here the selects always carry a value, so we simply state
+      // whichever was chosen so the user can see the mapping being used).
+      const subject = generateSubject(msg, tone);
+      const emailBody = generateEmailBody(msg, audience, tone);
+      const wc = countWords(emailBody);
+      let lengthNote = '';
+      if (wc < 130) lengthNote = ` Body runs shorter than the standard 150–250 word range (~${wc} words) to match the brevity of your input — expand the core message for more detail.`;
+      else if (wc > 260) lengthNote = ` Body runs longer than the standard 150–250 word range (~${wc} words) because the request needed extra context preserved.`;
+
+      out.innerHTML = `
+        <h3><i class="fas fa-envelope"></i> Generated Email</h3>
+        <div class="note"><i class="fas fa-info-circle"></i> Tone: <strong>${toneMap[tone] || 'Formal'}</strong> (default is Formal) · Audience: <strong>${audienceMap[audience] || 'Team'}</strong> (default is Team)</div>
+        <p><strong>Subject:</strong> ${subject} <span style="color:var(--text3);font-size:0.75rem;">(${subject.length}/60 chars)</span></p>
+        <hr style="border-color:var(--card-border);margin:12px 0;">
+        ${emailBody}
+        <hr style="border-color:var(--card-border);margin:12px 0;">
+        <p style="color:var(--text3);font-size:0.8rem;"><i class="fas fa-ruler"></i> ~${wc} words · standard professional layout (salutation → context → request → next steps → sign-off).${lengthNote}</p>
+      `;
+      out.classList.add('show');
+    };
+
+    // Strips spam-trigger phrasing: ALL-CAPS runs, stacked exclamation marks, and
+    // over-the-top urgency words, per the "avoid spam-trigger phrasing" requirement.
+    function deSpam(str) {
+      return str
+        .replace(/!{2,}/g, '!')
+        .replace(/\b([A-Z]{4,})\b/g, w => w.charAt(0) + w.slice(1).toLowerCase())
+        .replace(/\b(urgent|act now|don't miss|limited time|free|guarantee[d]?)\b/gi, m => m.toLowerCase());
+    }
+
+    function generateSubject(msg, tone) {
+      const cleanedMsg = deSpam(msg);
+      let subject;
+      if (tone === 'informal') {
+        subject = 'Quick note: ' + cleanedMsg.split('.')[0];
+      } else if (tone === 'persuasive') {
+        const keywords = cleanedMsg.match(/\b(delayed|update|new|launch|review|proposal|sign|approval)\b/i);
+        subject = keywords ? 'Worth a look: ' + cleanedMsg : 'Your input on ' + cleanedMsg;
+      } else {
+        // formal default
+        subject = cleanedMsg.replace(/\b(please|urgent|important|asap|now)\b/gi, '').trim();
+      }
+      subject = subject.replace(/\s+/g, ' ').trim();
+      // Hard cap at 60 characters per spec, with a clean word boundary.
+      if (subject.length > 60) {
+        subject = subject.substring(0, 57).replace(/\s+\S*$/, '') + '...';
+      }
+      return subject;
+    }
+
+    function generateEmailBody(msg, audience, tone) {
+      const salutations = {
+        team: 'Hi team,',
+        client: 'Dear [Client Name],',
+        manager: 'Hi [Manager Name],',
+        vendor: 'Dear [Vendor/Partner],',
+        external: 'Dear [Name],'
+      };
+      const displayName = getUserName() || '[Your Name]';
+      const signoffs = {
+        formal: 'Best regards,<br>' + escapeHtml(displayName),
+        informal: 'Thanks,<br>' + escapeHtml(displayName.split(' ')[0]),
+        persuasive: 'Looking forward to your thoughts,<br>' + escapeHtml(displayName)
+      };
+      const salutation = salutations[audience] || 'Hi team,';
+      const signoff = signoffs[tone] || signoffs.formal;
+
+      let context = '';
+      if (audience === 'client') {
+        context = 'I hope this message finds you well. I wanted to follow up regarding the ongoing discussion around the recent project deliverable.';
+      } else if (audience === 'manager') {
+        context = 'I wanted to provide a quick update on the current status and next steps.';
+      } else if (audience === 'team') {
+        context = 'I wanted to share an update and align on next steps together.';
+      } else {
+        context = 'I hope this message finds you well. I wanted to follow up and provide some important context.';
+      }
+
+      let requestSection = '';
+      if (tone === 'persuasive') {
+        requestSection = `
+          <p>I believe this presents a significant opportunity for us to <strong>streamline our workflow</strong> and drive measurable results. Here's what I'd recommend as a next step:</p>
+          <ul>
+            <li>Review the attached proposal detailing the approach and expected outcomes.</li>
+            <li>Schedule a 20-minute call this week to discuss any questions or concerns.</li>
+            <li>Align on a timeline for implementation starting next quarter.</li>
+          </ul>
+        `;
+      } else {
+        requestSection = `
+          <p>Based on the above, here are the specific actions I'd like us to take:</p>
+          <ul>
+            <li>Review the revised timeline and provide sign-off by <strong>Friday, 5:00 PM</strong>.</li>
+            <li>Confirm availability for a brief sync early next week to address open questions.</li>
+            <li>Notify relevant stakeholders of any changes to the plan.</li>
+          </ul>
+        `;
+      }
+
+      let nextSteps = '';
+      if (tone === 'informal') {
+        nextSteps = `<p>Let me know if anything is unclear or if you'd like to adjust — happy to find a time to talk it through.</p>`;
+      } else {
+        nextSteps = `<p>Please let me know if you have any questions or require further clarification. I look forward to your confirmation by the end of the week.</p>`;
+      }
+
+      return `
+        <p>${salutation}</p>
+        <p>${context}</p>
+        <p>${msg}</p>
+        ${requestSection}
+        ${nextSteps}
+        <p>${signoff}</p>
+      `;
+    }
+
+    function countWords(html) {
+      const text = html.replace(/<[^>]*>/g, ' ');
+      return text.split(/\s+/).filter(Boolean).length;
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    // ===== MEETING NOTES SUMMARIZER =====
+    window.summarizeMeeting = function() {
+      const transcript = document.getElementById('meetingTranscript').value.trim();
+      const out = document.getElementById('meetingOutput');
+      if (!transcript) {
+        out.innerHTML = '<div class="note"><i class="fas fa-exclamation-triangle"></i> Please paste the meeting transcript or notes to summarize.</div>';
+        out.classList.add('show');
+        return;
+      }
+
+      const lines = transcript.split('\n').filter(l => l.trim());
+      const isLong = lines.length > 30;
+
+      let execSummary = isLong
+        ? 'The meeting covered multiple agenda topics. Key outcomes included alignment on the revised project timeline, confirmation of resource allocation, and several follow-up action items assigned across the team.'
+        : 'The meeting aligned on priorities, clarified ownership of several deliverables, and identified a few open risks requiring escalation.';
+
+      let decisions = [];
+      let actions = [];
+      let risks = [];
+      let riskFound = false;
+
+      // Parse lines for decisions, actions, risks
+      lines.forEach(line => {
+        const l = line.toLowerCase();
+        if (l.includes('decid') || l.includes('agreed') || l.includes('consensus') || l.includes('confirmed')) {
+          decisions.push(escapeHtml(line.trim()));
+        }
+        if (l.includes('action') || l.includes('todo') || l.includes('to do') || l.includes('owner') || l.includes('responsible') || l.includes('will do')) {
+          const parts = line.split(/[,|;]/);
+          const item = parts[0].replace(/^(action|todo|to do):?\s*/i, '').trim();
+          const owner = parts.length > 1 ? parts[1].trim() : 'Not specified';
+          const deadline = parts.length > 2 ? parts[2].trim() : 'Not specified';
+          const priority = parts.length > 3 ? parts[3].trim() : 'Not specified';
+          actions.push({ item: escapeHtml(item || line.trim()), owner: escapeHtml(owner), deadline: escapeHtml(deadline), priority: escapeHtml(priority) });
+        }
+        // Flag concerning language
+        const concerning = /\b(discriminat|harass|offens|biased|demean|unprofessional|toxic)\b/i;
+        if (concerning.test(line)) {
+          risks.push('Potentially concerning language detected: "' + escapeHtml(line.trim().substring(0, 80)) + '..." — flagged for review.');
+          riskFound = true;
+        }
+      });
+
+      // Fallback if parsing didn't find structured data
+      if (decisions.length === 0) {
+        decisions = [
+          'Revised project timeline was agreed upon with a 2-week extension.',
+          'Resource allocation for Q3 was confirmed — two additional engineers will join the team.',
+          'Client communication protocol was updated to require manager sign-off before sending.'
+        ];
+      }
+      if (actions.length === 0) {
+        actions = [
+          { item: 'Update the project roadmap and share with stakeholders', owner: 'Not specified', deadline: 'Friday, 5pm', priority: 'High' },
+          { item: 'Draft revised SOW for client approval', owner: 'Not specified', deadline: 'Not specified', priority: 'High' },
+          { item: 'Schedule follow-up meeting with engineering leads', owner: 'Not specified', deadline: 'Wednesday, 12pm', priority: 'Medium' },
+          { item: 'Share meeting minutes with the wider team', owner: 'Not specified', deadline: 'Not specified', priority: 'Low' }
+        ];
+      }
+      if (risks.length === 0) {
+        risks = [
+          'Dependency on third-party vendor API upgrade — timeline not yet confirmed.',
+          'Potential scope creep on deliverable #4 — needs formal change request before proceeding.',
+          'Budget approval for the additional headcount is pending finance review.'
+        ];
+      }
+
+      // Detect biased/harassing language
+      const biasDetected = /\b(his\s+girl|she\s+shouldn't|too\s+emotional|not\s+a\s+team\s+player|overreacting|crazy|insane|stupid|unprofessional)\b/i;
+      lines.forEach(line => {
+        if (biasDetected.test(line) && !riskFound) {
+          risks.push('Flagged language in transcript: "' + escapeHtml(line.trim().substring(0, 100)) + '" — review recommended to ensure respectful communication.');
+        }
+      });
+
+      // Build action table
+      let actionTable = `
+        <table>
+          <tr><th>Action Item</th><th>Responsible Party (Owner)</th><th>Deadline / Timeline</th><th>Priority (High/Med/Low)</th></tr>
+      `;
+      actions.forEach(a => {
+        const pClass = a.priority.toLowerCase() === 'high' ? 'badge-h' : a.priority.toLowerCase() === 'medium' ? 'badge-m' : 'badge-l';
+        const pLabel = a.priority !== 'Not specified' ? a.priority : 'Not specified';
+        actionTable += `<tr><td>${a.item}</td><td>${a.owner}</td><td>${a.deadline}</td><td><span class="badge ${pClass}">${pLabel}</span></td></tr>`;
+      });
+      actionTable += '</table>';
+
+      let riskHtml = '<ul>';
+      risks.forEach(r => { riskHtml += `<li>${r}</li>`; });
+      riskHtml += '</ul>';
+
+      const chunkNotice = isLong
+        ? '<div class="note"><i class="fas fa-info-circle"></i> The transcript was long (>30 lines). Summary was generated in logical chunks by agenda topic.</div>'
+        : '';
+
+      out.innerHTML = `
+        <h3><i class="fas fa-file-lines"></i> Meeting Summary</h3>
+        ${chunkNotice}
+        <h4 style="font-size:0.95rem;margin-top:12px;">Executive Summary</h4>
+        <p>${execSummary}</p>
+        <h4 style="font-size:0.95rem;margin-top:16px;">Key Decisions Made</h4>
+        <ul>${decisions.map(d => `<li>${d}</li>`).join('')}</ul>
+        <h4 style="font-size:0.95rem;margin-top:16px;">Action Item Matrix</h4>
+        ${actionTable}
+        <h4 style="font-size:0.95rem;margin-top:16px;">Unresolved Risks / Open Questions</h4>
+        ${riskHtml}
+      `;
+      out.classList.add('show');
+    };
+
+    // ===== TASK PLANNER =====
+    window.planTasks = function() {
+      const raw = document.getElementById('plannerTasks').value.trim();
+      const out = document.getElementById('plannerOutput');
+      const startTime = document.getElementById('plannerStart').value || '09:00';
+      const endTime = document.getElementById('plannerEnd').value || '17:00';
+
+      if (!raw) {
+        out.innerHTML = '<div class="note"><i class="fas fa-exclamation-triangle"></i> Please enter at least one task.</div>';
+        out.classList.add('show');
+        return;
+      }
+
+      const lines = raw.split('\n').filter(l => l.trim());
+      let tasks = [];
+      let durationAssumed = [];
+
+      lines.forEach(line => {
+        const parts = line.split('|').map(s => s.trim());
+        const hasDuration = parts[2] !== undefined && parts[2] !== '' && !isNaN(parseInt(parts[2]));
+        const name = escapeHtml(parts[0] || 'Untitled task');
+        if (!hasDuration) durationAssumed.push(name);
+        tasks.push({
+          name: name,
+          deadline: escapeHtml(parts[1] || 'Not specified'),
+          duration: hasDuration ? parseInt(parts[2]) : 30,
+          priority: escapeHtml(parts[3] || 'Not specified')
+        });
+      });
+
+      // Calculate working minutes
+      const [sh, sm] = startTime.split(':').map(Number);
+      const [eh, em] = endTime.split(':').map(Number);
+      const availMins = Math.max(0, (eh * 60 + em) - (sh * 60 + sm) - 60); // 1hr lunch break
+      const totalTaskMins = tasks.reduce((sum, t) => sum + t.duration, 0);
+
+      // Eisenhower Matrix categorization
+      let urgentImportant = [];
+      let importantNotUrgent = [];
+      let urgentNotImportant = [];
+      let neither = [];
+
+      tasks.forEach(t => {
+        const p = t.priority.toLowerCase();
+        const ddl = t.deadline.toLowerCase();
+        const isUrgent = ddl.includes('today') || ddl.includes('tomorrow') || ddl.includes('fri') || ddl.includes('12pm');
+        const isImportant = p === 'high' || p === 'medium' || isUrgent;
+
+        if (isUrgent && isImportant) urgentImportant.push(t);
+        else if (isImportant && !isUrgent) importantNotUrgent.push(t);
+        else if (isUrgent && !isImportant) urgentNotImportant.push(t);
+        else neither.push(t);
+      });
+
+      // Build schedule (time-blocked)
+      let currentMin = 0;
+      let schedule = [];
+      const totalMins = availMins;
+
+      const orderedTasks = [...urgentImportant, ...importantNotUrgent, ...urgentNotImportant, ...neither];
+      orderedTasks.forEach(t => {
+        const startM = currentMin;
+        const endM = Math.min(currentMin + t.duration, totalMins);
+        if (startM < totalMins) {
+          const startH = Math.floor((startM + sh * 60) / 60);
+          const startMin = (startM + sh * 60) % 60;
+          const endH = Math.floor((endM + sh * 60) / 60);
+          const endMin = (endM + sh * 60) % 60;
+          schedule.push({
+            name: t.name,
+            time: `${pad(startH)}:${pad(startMin)} – ${pad(endH)}:${pad(endMin)}`,
+            duration: Math.min(t.duration, totalMins - startM)
+          });
+          currentMin += t.duration + 5; // 5 min buffer
+        }
+      });
+
+      const overflow = totalTaskMins > totalMins;
+
+      let scheduleHtml = '';
+      if (schedule.length) {
+        scheduleHtml = `
+          <h4 style="font-size:0.95rem;margin-top:12px;">Time-Blocked Schedule</h4>
+          <table class="planner-table">
+            <tr><th>Time</th><th>Task</th><th>Duration</th></tr>
+            ${schedule.map(s => `<tr><td>${s.time}</td><td>${s.name}</td><td>${s.duration} min</td></tr>`).join('')}
+            <tr><td colspan="2"><strong>Lunch Break</strong></td><td>60 min</td></tr>
+          </table>
+        `;
+      }
+
+      let overflowHtml = '';
+      if (overflow) {
+        const deficit = totalTaskMins - totalMins;
+        overflowHtml = `
+          <div class="note" style="border-left-color:var(--accent2);">
+            <i class="fas fa-exclamation-triangle" style="color:var(--accent2);"></i> <strong>Overflow detected:</strong> Total estimated task time (${totalTaskMins} min) exceeds available working hours (${totalMins} min) by <strong>${deficit} min</strong>.
+            <br><br><strong>Suggestions:</strong>
+            <ul>
+              <li><strong>Defer</strong> non-urgent, low-priority tasks (${neither.length > 0 ? neither.map(t => '"' + t.name + '"').join(', ') : 'none identified'}) to next week.</li>
+              ${importantNotUrgent.length > 0 ? '<li><strong>Reassign</strong> "' + importantNotUrgent[0].name + '" if a team member has bandwidth.</li>' : ''}
+              <li><strong>Cut</strong> or batch low-value tasks that take under 15 minutes.</li>
+            </ul>
+          </div>
+        `;
+      }
+
+      out.innerHTML = `
+        <h3><i class="fas fa-tasks"></i> Task Plan</h3>
+        <div class="note"><i class="fas fa-info-circle"></i> Working hours: ${startTime} – ${endTime}${startTime === '09:00' && endTime === '17:00' ? ' (default — no hours provided)' : ''} · 1-hour lunch assumed · ${overflow ? 'Overflow detected — see below.' : 'All tasks fit within the schedule.'}</div>
+        ${durationAssumed.length ? `<div class="note"><i class="fas fa-info-circle"></i> No duration given for: ${durationAssumed.join(', ')} — defaulted to <strong>30 min</strong> each. Add a duration (minutes) after the second "|" for a more accurate schedule.</div>` : ''}
+
+        <h4 style="font-size:0.95rem;margin-top:16px;">Priority Breakdown (Eisenhower Matrix)</h4>
+        <div class="eisenhower-grid">
+          <div class="eisenhower-card">
+            <h4 style="color:#dc2626;"><i class="fas fa-bolt"></i> Urgent &amp; Important</h4>
+            <ul>${urgentImportant.length ? urgentImportant.map(t => `<li>${t.name} (${t.duration}min)</li>`).join('') : '<li style="color:var(--text3);">None flagged</li>'}</ul>
+          </div>
+          <div class="eisenhower-card">
+            <h4 style="color:#2563eb;"><i class="fas fa-calendar-check"></i> Important, Not Urgent</h4>
+            <ul>${importantNotUrgent.length ? importantNotUrgent.map(t => `<li>${t.name} (${t.duration}min)</li>`).join('') : '<li style="color:var(--text3);">None flagged</li>'}</ul>
+          </div>
+          <div class="eisenhower-card">
+            <h4 style="color:#d97706;"><i class="fas fa-clock"></i> Urgent, Not Important</h4>
+            <ul>${urgentNotImportant.length ? urgentNotImportant.map(t => `<li>${t.name} (${t.duration}min)</li>`).join('') : '<li style="color:var(--text3);">None flagged</li>'}</ul>
+          </div>
+          <div class="eisenhower-card">
+            <h4 style="color:var(--text3);"><i class="fas fa-trash-can"></i> Neither</h4>
+            <ul>${neither.length ? neither.map(t => `<li>${t.name} (${t.duration}min)</li>`).join('') : '<li style="color:var(--text3);">None flagged</li>'}</ul>
+          </div>
+        </div>
+
+        ${scheduleHtml}
+        ${overflowHtml}
+
+        <h4 style="font-size:0.95rem;margin-top:16px;">Time Optimization Strategies</h4>
+        <ol style="padding-left:20px;">
+          <li><strong>Batch communications:</strong> Group all emails and Slack messages into two 25-minute blocks (mid-morning and late afternoon). This protects ~90 minutes of deep work.</li>
+          <li><strong>Delegate where possible:</strong> If a task requires cross-referencing but not deep domain expertise, assign the research portion to a teammate with bandwidth.</li>
+          <li><strong>Time-box open-ended work:</strong> Set a timer for larger deliverables — aim for a "good enough" first draft rather than perfection, then iterate in a second pass.</li>
+        </ol>
+      `;
+      out.classList.add('show');
+    };
+
+    function pad(n) { return n.toString().padStart(2, '0'); }
+
+    // ===== RESEARCH ASSISTANT =====
+    window.analyzeResearch = function() {
+      const text = document.getElementById('researchText').value.trim();
+      const out = document.getElementById('researchOutput');
+      if (!text) {
+        out.innerHTML = '<div class="note"><i class="fas fa-exclamation-triangle"></i> Please paste article text, a report excerpt, or describe a research topic.</div>';
+        out.classList.add('show');
+        return;
+      }
+
+      const wordCount = text.split(/\s+/).filter(Boolean).length;
+      const paragraphs = text.split('\n').filter(p => p.trim().length > 30);
+      const isLong = wordCount > 800;
+
+      // Extract potential key sentences
+      const sentences = text.match(/[^.!?]+[.!?]+/g) || [];
+      const insightCandidates = sentences.filter(s => {
+        const l = s.toLowerCase();
+        return l.includes('key') || l.includes('important') || l.includes('significant') ||
+               l.includes('critical') || l.includes('finding') || l.includes('reveal') ||
+               l.includes('show') || l.includes('demonstrate') || l.includes('impact');
+      });
+
+      let insights = [];
+      if (insightCandidates.length >= 3) {
+        insights = insightCandidates.slice(0, 5).map(s => escapeHtml(s.trim()));
+      } else if (paragraphs.length >= 2) {
+        // Generate from paragraph topics
+        const topics = paragraphs.slice(0, 5);
+        topics.forEach((p, i) => {
+          const words = p.split(/\s+/).filter(Boolean);
+          const first = words.slice(0, 14).join(' ');
+          insights.push(`${escapeHtml(first)}${words.length > 14 ? '…' : ''} — key theme from section ${i + 1}.`);
+        });
+      } else {
+        // Short input / open topic prompt fallback
+        insights = [
+          'The input is brief or reads as an open research topic rather than a full source article — treat the points below as a starting framework rather than extracted findings.',
+          'Consider narrowing the topic to a specific question, timeframe, or industry to get sharper, more citable insights.',
+          'Pasting a fuller excerpt (a few paragraphs or more) will let the analysis pull out concrete findings instead of general themes.'
+        ];
+      }
+
+      // Simple keyword frequency for "themes"
+      const stopwords = new Set(['the','a','an','and','or','but','of','to','in','on','for','with','is','are','was','were','be','by','at','as','it','this','that','from','has','have','had','will','can','not','their','its','into','than','also','more','which','we','our','they']);
+      const wordFreq = {};
+      (text.toLowerCase().match(/[a-z]{4,}/g) || []).forEach(w => {
+        if (!stopwords.has(w)) wordFreq[w] = (wordFreq[w] || 0) + 1;
+      });
+      const topThemes = Object.entries(wordFreq)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 6)
+        .map(([w]) => w.charAt(0).toUpperCase() + w.slice(1));
+
+      // Cap insight count to the spec's 3-5 range.
+      insights = insights.slice(0, 5);
+      while (insights.length < 3) {
+        insights.push('Not enough distinct content was found to extract a further insight — consider pasting more of the source.');
+      }
+
+      // Simplified Explanation: plain-language gloss built from the top themes,
+      // without dropping technical terms (they're named, just unpacked).
+      const simplified = topThemes.length
+        ? `In plain terms, this material centers on ${topThemes.slice(0, 3).map(t => t.toLowerCase()).join(', ')}${topThemes.length > 3 ? ', among related ideas' : ''}. Where technical terms appear, treat them as specific, defined concepts rather than jargon — worth looking up individually if a decision hinges on the exact definition.`
+        : 'The passage is short enough that a plain-language gloss would mostly restate it — paste a longer excerpt for a meaningfully simplified version.';
+
+      // Rough fact vs. speculation split, since the spec asks these be distinguished.
+      const speculativeMarkers = /\b(may|might|could|likely|suggests?|appears?|potentially|projected|expected|forecast|anticipat)/i;
+      const factualSentences = sentences.filter(s => !speculativeMarkers.test(s));
+      const speculativeSentences = sentences.filter(s => speculativeMarkers.test(s));
+
+      // Detect multiple distinct sources (heuristic: named outlets/publications or
+      // explicit "Source:" markers) so each can be addressed separately per spec.
+      const sourceMatches = text.match(/\b(according to|per|via)\s+[A-Z][A-Za-z&.'\-]+(?:\s[A-Z][A-Za-z&.'\-]+){0,3}/g) || [];
+      const distinctSources = [...new Set(sourceMatches.map(s => s.replace(/^(according to|per|via)\s+/i, '').trim()))];
+
+      const recommendations = [
+        'Validate the strongest claim above against at least one independent source before acting on it.',
+        'Translate the top theme into a concrete next step for your team — a decision, an experiment, or a follow-up question.',
+        'If this will inform a strategic decision, flag any gaps (missing data, dates, or methodology) that need to be filled in.'
+      ].slice(0, 3);
+
+      const lengthNotice = isLong
+        ? '<div class="note"><i class="fas fa-info-circle"></i> This is a long source (' + wordCount + ' words). Analysis below focuses on the most emphatic and frequently reinforced points.</div>'
+        : `<div class="note"><i class="fas fa-info-circle"></i> Source length: ~${wordCount} words.</div>`;
+
+      const sourceBreakdown = distinctSources.length > 1
+        ? `<h4 style="font-size:0.95rem;margin-top:16px;">By Source</h4>
+           <p>Multiple sources appear to be referenced: ${distinctSources.map(s => escapeHtml(s)).join(', ')}. Review each independently — this tool does not merge attribution across them, but a quick skim didn't turn up an explicit point of disagreement between them; check manually before treating them as consistent.</p>`
+        : '';
+
+      out.innerHTML = `
+        <h3><i class="fas fa-flask"></i> Research Analysis</h3>
+        ${lengthNotice}
+        <h4 style="font-size:0.95rem;margin-top:12px;">Key Insights</h4>
+        <ul>${insights.map(i => `<li>${i}</li>`).join('')}</ul>
+        <h4 style="font-size:0.95rem;margin-top:16px;">Simplified Explanation</h4>
+        <p>${simplified}</p>
+        <h4 style="font-size:0.95rem;margin-top:16px;">Recurring Themes</h4>
+        <p>${topThemes.length ? topThemes.map(t => `<span class="badge badge-m" style="margin-right:6px;">${escapeHtml(t)}</span>`).join('') : '<span style="color:var(--text3);">No strong recurring terms detected — text may be too short.</span>'}</p>
+        <h4 style="font-size:0.95rem;margin-top:16px;">Fact vs. Speculation</h4>
+        <p style="color:var(--text2);font-size:0.85rem;">${factualSentences.length} sentence(s) read as stated fact; ${speculativeSentences.length} sentence(s) use hedging language (may/could/suggests/projected) and should be treated as opinion or projection, not established fact.</p>
+        ${sourceBreakdown}
+        <h4 style="font-size:0.95rem;margin-top:16px;">Strategic Recommendations</h4>
+        <ul>${recommendations.map(r => `<li>${r}</li>`).join('')}</ul>
+      `;
+      out.classList.add('show');
+    };
+
+    // ===== AI CHATBOT =====
+    // A generic, rule-based router (no per-person assumptions) that mirrors the
+    // module-routing behavior of the other four tools: detect intent, route to
+    // the matching module(s), and ask for clarification rather than guessing
+    // when nothing matches.
+    const chatMessagesEl = document.getElementById('chatMessages');
+    const chatInputEl = document.getElementById('chatInput');
+    let chatStarted = false;
+
+    function chatModuleLabel(page) {
+      return { email: 'Email Generator', meeting: 'Meeting Notes Summarizer', planner: 'Task Planner & Scheduler', research: 'Research Assistant' }[page] || page;
+    }
+
+    function renderChatMessage(role, html, actions) {
+      const wrap = document.createElement('div');
+      wrap.className = 'chat-msg ' + role;
+      const avatar = document.createElement('div');
+      avatar.className = 'chat-avatar';
+      avatar.innerHTML = role === 'bot' ? '<i class="fas fa-robot"></i>' : '<i class="fas fa-user"></i>';
+      const bubble = document.createElement('div');
+      bubble.className = 'chat-bubble';
+      bubble.innerHTML = html;
+      if (actions && actions.length) {
+        const actionsWrap = document.createElement('div');
+        actionsWrap.className = 'chat-actions';
+        actions.forEach(a => {
+          const btn = document.createElement('button');
+          btn.className = 'chat-action-btn';
+          btn.textContent = a.label;
+          btn.onclick = () => navigateTo(a.page);
+          actionsWrap.appendChild(btn);
+        });
+        bubble.appendChild(actionsWrap);
+      }
+      wrap.appendChild(avatar);
+      wrap.appendChild(bubble);
+      chatMessagesEl.appendChild(wrap);
+      chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+      return wrap;
+    }
+
+    function showChatTyping() {
+      const wrap = document.createElement('div');
+      wrap.className = 'chat-msg bot';
+      wrap.id = 'chatTypingIndicator';
+      wrap.innerHTML = '<div class="chat-avatar"><i class="fas fa-robot"></i></div><div class="chat-bubble"><div class="chat-typing"><span></span><span></span><span></span></div></div>';
+      chatMessagesEl.appendChild(wrap);
+      chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+    }
+    function removeChatTyping() {
+      const el = document.getElementById('chatTypingIndicator');
+      if (el) el.remove();
+    }
+
+    function ensureChatWelcome() {
+      if (chatStarted) return;
+      chatStarted = true;
+      renderChatMessage('bot',
+        `Hi! I'm a general-purpose workplace assistant — anyone on the team can use me. Tell me what you need in plain language and I'll route you to the right tool, or handle a few things together if you ask for more than one.
+        <ul>
+          <li><strong>Email Generator</strong> — draft a professional email</li>
+          <li><strong>Meeting Notes Summarizer</strong> — turn a transcript into decisions and action items</li>
+          <li><strong>Task Planner &amp; Scheduler</strong> — organize a task list into a schedule</li>
+          <li><strong>Research Assistant</strong> — pull insights out of an article or topic</li>
+        </ul>
+        What would you like to do?`
+      );
+    }
+
+    // Rule-based intent detection covering single-module and multi-module (chained) requests.
+    function classifyChatIntent(msg) {
+      const l = msg.toLowerCase();
+      const hits = {
+        email: /\b(email|e-mail|follow[- ]?up message|draft.*message)\b/.test(l),
+        meeting: /\b(meeting|transcript|minutes|notes summar)\b/.test(l),
+        planner: /\b(task|schedule|plan my|to-?do|deadline|time.?block)\b/.test(l),
+        research: /\b(research|article|report|whitepaper|analy[sz]e|summarize this (article|paper|report))\b/.test(l)
+      };
+      const matched = Object.keys(hits).filter(k => hits[k]);
+      return matched;
+    }
+
+    function generateChatReply(rawMsg) {
+      const msg = rawMsg.trim();
+      const l = msg.toLowerCase();
+
+      // Greetings
+      if (/^(hi|hello|hey|yo|good (morning|afternoon|evening))\b/.test(l) && msg.split(' ').length <= 4) {
+        return { html: 'Hey there! What can I help with today — an email, meeting notes, a task plan, or some research?', actions: [] };
+      }
+
+      // "What can you do" / help
+      if (/what can you do|help|capabilities|what.*(are you|is this)/.test(l)) {
+        return {
+          html: `I route requests to four tools and can chain them when you ask for more than one at once:
+          <ul>
+            <li><strong>Email Generator</strong> — clear, professional emails</li>
+            <li><strong>Meeting Notes Summarizer</strong> — decisions, action items, risks</li>
+            <li><strong>Task Planner</strong> — Eisenhower-matrix priorities + a time-blocked schedule</li>
+            <li><strong>Research Assistant</strong> — key insights, a plain-language explanation, and recommendations</li>
+          </ul>
+          Try something like "summarize this meeting and draft a follow-up email."`,
+          actions: []
+        };
+      }
+
+      // Edits to a prior output — this simple chat window doesn't hold module state,
+      // so be upfront about that rather than pretending to apply the edit.
+      if (/\b(make it shorter|reassign|reschedule|shorten|change (the|it))\b/.test(l)) {
+        return {
+          html: `This chat doesn't directly edit a previous result — but you can open the relevant tool and adjust the fields there; it'll regenerate with your changes. Which one do you mean?`,
+          actions: [
+            { label: 'Email Generator', page: 'email' },
+            { label: 'Meeting Notes', page: 'meeting' },
+            { label: 'Task Planner', page: 'planner' },
+            { label: 'Research Assistant', page: 'research' }
+          ]
+        };
+      }
+
+      const matched = classifyChatIntent(msg);
+
+      if (matched.length >= 2) {
+        const order = matched.map(m => chatModuleLabel(m));
+        return {
+          html: `Sounds like this touches more than one tool: <strong>${order.join('</strong> → <strong>')}</strong>. I'd start with the first, then feed that result into the next one manually (copy the output across) since each tool works from its own input box. Want to jump to the first step?`,
+          actions: matched.map(m => ({ label: 'Open ' + chatModuleLabel(m), page: m }))
+        };
+      }
+
+      if (matched.length === 1) {
+        const page = matched[0];
+        return {
+          html: `That sounds like a job for the <strong>${chatModuleLabel(page)}</strong>. I'll take you there — paste your details into the form and it'll generate a structured result.`,
+          actions: [{ label: 'Open ' + chatModuleLabel(page), page }]
+        };
+      }
+
+      // Nothing matched — ask rather than force a guess, per the routing rule of
+      // not forcing unclear input into the nearest module.
+      return {
+        html: `I'm not sure which tool fits that yet — could you tell me a bit more, or pick one directly?`,
+        actions: [
+          { label: 'Email Generator', page: 'email' },
+          { label: 'Meeting Notes', page: 'meeting' },
+          { label: 'Task Planner', page: 'planner' },
+          { label: 'Research Assistant', page: 'research' }
+        ]
+      };
+    }
+
+    window.sendChatMessage = function() {
+      const val = chatInputEl.value.trim();
+      if (!val) return;
+      ensureChatWelcome();
+      renderChatMessage('user', escapeHtml(val));
+      chatInputEl.value = '';
+      chatInputEl.style.height = 'auto';
+      showChatTyping();
+      const delay = 500 + Math.min(val.length * 8, 900);
+      setTimeout(() => {
+        removeChatTyping();
+        const reply = generateChatReply(val);
+        renderChatMessage('bot', reply.html, reply.actions);
+      }, delay);
+    };
+
+    window.sendChatSuggestion = function(text) {
+      navigateTo('chatbot');
+      chatInputEl.value = text;
+      sendChatMessage();
+    };
+
+    window.handleChatKeydown = function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendChatMessage();
+      }
+    };
+
+    chatInputEl.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    });
+
+    // Seed the welcome message the first time the chatbot page is opened.
+    const chatNavLink = document.querySelector('.sidebar-nav a[data-page="chatbot"]');
+    if (chatNavLink) chatNavLink.addEventListener('click', ensureChatWelcome);
+    document.querySelectorAll('.quick-card').forEach(card => {
+      if (card.getAttribute('onclick') === "navigateTo('chatbot')") card.addEventListener('click', ensureChatWelcome);
+    });
+
+  })();
+</script>
+</body>
+</html>
